@@ -1,6 +1,8 @@
 # crubbletea
 
-A port of [Charm](https://charm.sh/)'s [Bubble Tea](https://github.com/charmbracelet/bubbletea) (Go) to [Crystal](https://crystal-lang.org/) — a framework for building terminal UIs using the **Elm Architecture** (`init`/`update`/`view`).
+> **Work in progress.** Many features are incomplete or broken. Expect bugs, missing functionality, and API changes.
+
+A port of [Bubble Tea](https://github.com/charmbracelet/bubbletea) (Go) to [Crystal](https://crystal-lang.org/) — a framework for building TUIs
 
 This includes ports of the Bubble Tea companion libraries as well:
 
@@ -15,7 +17,7 @@ This includes ports of the Bubble Tea companion libraries as well:
    ```yaml
    dependencies:
      crubbletea:
-       github: mansurovmaksatbek/crubbletea
+       github: baltavay/crubbletea
    ```
 
 2. Run `shards install`
@@ -201,14 +203,14 @@ program.kill
 ## Development
 
 ```bash
-git clone https://github.com/mansurovmaksatbek/crubbletea
+git clone https://github.com/baltavay/crubbletea
 cd crubbletea
 crystal spec
 ```
 
 ## Contributing
 
-1. Fork it (<https://github.com/mansurovmaksatbek/crubbletea/fork>)
+1. Fork it (<https://github.com/baltavay/crubbletea/fork>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
