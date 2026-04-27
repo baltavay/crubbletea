@@ -119,8 +119,8 @@ module Crubbletea::Bubbles::Help
         col = Lipgloss.join_horizontal(Lipgloss::Style::Pos::Top, [
           sep,
           @styles.full_key.render(keys.join('\n')),
-          " ",
-          @styles.full_desc.render(descs.join('\n')),
+          "   ",
+          @styles.full_desc.inline(true).render(descs.join('\n')),
         ])
 
         w = Lipgloss.width(col)

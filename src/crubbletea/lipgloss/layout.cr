@@ -30,14 +30,15 @@ module Crubbletea::Lipgloss
     padded = strs.map_with_index do |s, idx|
       h = str_heights[idx]
       lines = s.split('\n')
+      s_w = lines.map { |l| ANSI.string_width(l) }.max
       while lines.size < max_h
         case position
         when Style::Pos::Top, Style::Pos::Left
-          lines << ""
+          lines << " " * s_w
         when Style::Pos::Bottom, Style::Pos::Right
-          lines.insert(0, "")
+          lines.insert(0, " " * s_w)
         when Style::Pos::Center
-          lines.insert(0, "")
+          lines.insert(0, " " * s_w)
         end
       end
       lines
