@@ -1,0 +1,9 @@
+name: crubbletea
+version: 0.1.0
+
+authors:
+  - Mansurov Maksatbek <maksat.mansurov@gmail.com>
+
+crystal: '>= 1.19.1'
+
+license: MIT
