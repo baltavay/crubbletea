@@ -79,3 +79,11 @@ struct Crubbletea::EnvMsg
   def initialize(@env : Array(String))
   end
 end
+
+struct Crubbletea::EscapePendingMsg
+  include Crubbletea::Msg
+end
+
+struct Crubbletea::FlushEscapeMsg
+  include Crubbletea::Msg
+end

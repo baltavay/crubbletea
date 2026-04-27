@@ -2,8 +2,8 @@ class Crubbletea::Renderer
   @output : IO::FileDescriptor
   @width : Int32
   @height : Int32
-  @last_content : String = ""
   @last_view : View?
+  @last_lines : Array(String) = [] of String
 
   def initialize(@output : IO::FileDescriptor, @width : Int32, @height : Int32)
   end
@@ -63,22 +63,41 @@ class Crubbletea::Renderer
       buf << ANSI.set_window_title(view.window_title)
     end
 
-    buf << ANSI.cursor_home
-    buf << ANSI.clear_screen
+    new_lines = view.content.split('\n')
 
-    lines = view.content.split('\n')
-    max_lines = {@height, lines.size}.min
-    max_lines.times do |i|
-      line = lines[i]? || ""
-      buf << ANSI.cursor_move(0, i)
-      buf << ANSI.clear_line
-      buf << line
-    end
-
-    if @height > lines.size
-      (@height - lines.size).times do |i|
-        buf << ANSI.cursor_move(0, lines.size + i)
+    if first_render
+      buf << ANSI.clear_screen
+      max_lines = {@height, new_lines.size}.min
+      max_lines.times do |i|
+        buf << ANSI.cursor_move(0, i)
         buf << ANSI.clear_line
+        buf << new_lines[i]? || ""
+      end
+      if @height > new_lines.size
+        (@height - new_lines.size).times do |i|
+          buf << ANSI.cursor_move(0, new_lines.size + i)
+          buf << ANSI.clear_line
+        end
+      end
+    else
+      old_lines = @last_lines
+      max_lines = {@height, {old_lines.size, new_lines.size}.max}.min
+
+      max_lines.times do |i|
+        old_line = old_lines[i]? || ""
+        new_line = new_lines[i]? || ""
+        next if old_line == new_line
+
+        buf << ANSI.cursor_move(0, i)
+        buf << ANSI.clear_line
+        buf << new_line
+      end
+
+      if new_lines.size < old_lines.size
+        (new_lines.size...{@height, old_lines.size}.min).each do |i|
+          buf << ANSI.cursor_move(0, i)
+          buf << ANSI.clear_line
+        end
       end
     end
 
@@ -86,25 +105,20 @@ class Crubbletea::Renderer
       buf << ANSI.cursor_move(cursor.position.x, cursor.position.y)
       buf << cursor_style_seq(cursor)
       buf << ANSI.show_cursor
-    else
-      if view.alt_screen
-        buf << ANSI.cursor_move(0, @height - 1)
-      else
-        buf << ANSI.cursor_move(0, lines.size)
-      end
-      buf << ANSI.show_cursor
     end
 
     @output.write(buf.to_slice)
     @output.flush
 
     @last_view = view
+    @last_lines = new_lines
   end
 
   def clear_screen : Nil
     @output << ANSI.cursor_home
     @output << ANSI.clear_screen
     @output.flush
+    @last_lines = [] of String
   end
 
   def insert_above(text : String) : Nil

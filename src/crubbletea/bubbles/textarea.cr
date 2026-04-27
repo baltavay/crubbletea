@@ -21,6 +21,7 @@ class Crubbletea::Bubbles::TextArea::Model
   @focus : Bool
   @err : Exception?
   @viewport_y : Int32
+  @viewport_x : Int32
 
   def initialize(
     @placeholder : String = "",
@@ -40,6 +41,7 @@ class Crubbletea::Bubbles::TextArea::Model
     @cursor_col = 0
     @focus = false
     @viewport_y = 0
+    @viewport_x = 0
   end
 
   def value : String
@@ -51,6 +53,9 @@ class Crubbletea::Bubbles::TextArea::Model
     @lines = [""] if @lines.empty?
     @cursor_row = @lines.size - 1
     @cursor_col = @lines.last.size
+    gutter_width = @show_line_numbers ? (@lines.size.to_s.size + 1) : 0
+    content_width = {@width - gutter_width, 1}.max
+    @viewport_x = {@cursor_col - content_width + 1, 0}.max
   end
 
   def line_count : Int32
@@ -193,9 +198,9 @@ class Crubbletea::Bubbles::TextArea::Model
         move_left
       when key.to_s == "right"
         move_right
-      when key.to_s == "home", key.ctrl? && key.to_s == "a"
+      when key.to_s == "home", key.ctrl && key.to_s == "a"
         move_to_start
-      when key.to_s == "end", key.ctrl? && key.to_s == "e"
+      when key.to_s == "end", key.ctrl && key.to_s == "e"
         move_to_end
       when key.to_s == "backspace"
         delete_char_backward
@@ -203,12 +208,12 @@ class Crubbletea::Bubbles::TextArea::Model
         delete_char_forward
       when key.to_s == "enter"
         insert_newline
-      when key.ctrl? && key.to_s == "k"
+      when key.ctrl && key.to_s == "k"
         @lines[@cursor_row] = @lines[@cursor_row][0...@cursor_col]
-      when key.ctrl? && key.to_s == "u"
+      when key.ctrl && key.to_s == "u"
         @lines[@cursor_row] = @lines[@cursor_row][@cursor_col..]
         @cursor_col = 0
-      when !key.text.empty? && !key.ctrl? && !key.alt?
+      when !key.text.empty? && !key.ctrl && !key.alt
         key.text.each_char { |c| insert_char(c) }
       end
 
@@ -222,10 +227,22 @@ class Crubbletea::Bubbles::TextArea::Model
     gutter_width = @show_line_numbers ? (@lines.size.to_s.size + 1) : 0
     content_width = {@width - gutter_width, 1}.max
 
+    adjust_viewport
+
     @height.times do |i|
       line_idx = @viewport_y + i
       if line_idx < @lines.size
         line = @lines[line_idx]
+        if @viewport_x > 0
+          skipped = 0
+          pos = 0
+          line.each_char do |c|
+            break if skipped >= @viewport_x
+            skipped += Lipgloss::ANSI.char_width(c)
+            pos += 1
+          end
+          line = line[pos..]
+        end
         if Lipgloss::ANSI.string_width(line) > content_width
           line = Lipgloss::ANSI.truncate(line, content_width)
         else
@@ -252,6 +269,15 @@ class Crubbletea::Bubbles::TextArea::Model
       @viewport_y = @cursor_row
     elsif @cursor_row >= @viewport_y + @height
       @viewport_y = @cursor_row - @height + 1
+    end
+
+    gutter_width = @show_line_numbers ? (@lines.size.to_s.size + 1) : 0
+    content_width = {@width - gutter_width, 1}.max
+
+    if @cursor_col < @viewport_x
+      @viewport_x = @cursor_col
+    elsif @cursor_col >= @viewport_x + content_width
+      @viewport_x = @cursor_col - content_width + 1
     end
   end
 end

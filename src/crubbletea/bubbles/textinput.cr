@@ -23,6 +23,7 @@ class Crubbletea::Bubbles::TextInput::Model
   @cursor_pos : Int32
   @focus : Bool
   @err : Exception?
+  @view_offset : Int32
 
   def initialize(
     @prompt : String = "> ",
@@ -40,6 +41,7 @@ class Crubbletea::Bubbles::TextInput::Model
     @value = ""
     @cursor_pos = 0
     @focus = false
+    @view_offset = 0
   end
 
   def value : String
@@ -49,6 +51,8 @@ class Crubbletea::Bubbles::TextInput::Model
   def value=(v : String) : Nil
     @value = v
     @cursor_pos = v.size
+    avail = {@width - Lipgloss::ANSI.string_width(@prompt_style.render(@prompt)), 1}.max
+    @view_offset = {v.size - avail + 1, 0}.max
   end
 
   def cursor_pos : Int32
@@ -171,8 +175,9 @@ class Crubbletea::Bubbles::TextInput::Model
       when key.to_s == "ctrl+k"
         @value = @value[0...@cursor_pos]
       when key.to_s == "ctrl+w"
+        old_pos = @cursor_pos
         word_left
-        @value = @value[0...@cursor_pos] + @value[(@cursor_pos + 1)..]
+        @value = @value[0...@cursor_pos] + @value[old_pos..]
       when !key.text.empty? && !key.ctrl && !key.alt
         key.text.each_char { |c| insert_char(c) }
       end
@@ -182,11 +187,34 @@ class Crubbletea::Bubbles::TextInput::Model
 
   def view : String
     prompt_view = @prompt_style.render(@prompt)
+    prompt_w = Lipgloss::ANSI.string_width(prompt_view)
+    avail = {@width - prompt_w, 1}.max
 
     if @value.empty?
-      value_view = @placeholder_style.render(placeholder_display)
+      visible = placeholder_display
+      if visible.size > avail
+        visible = visible[0...avail]
+      end
+      value_view = @placeholder_style.render(visible)
     else
-      value_view = @style.render(display_value)
+      dv = display_value
+      offset = @view_offset
+      visible_end = {offset + avail, dv.size}.min
+      visible = dv[offset...visible_end]
+
+      if @focus && @cursor_pos >= offset + avail
+        offset = @cursor_pos - avail + 1
+        visible_end = {offset + avail, dv.size}.min
+        visible = dv[offset...visible_end]
+        @view_offset = offset
+      elsif @focus && @cursor_pos < offset
+        offset = @cursor_pos
+        visible_end = {offset + avail, dv.size}.min
+        visible = dv[offset...visible_end]
+        @view_offset = offset
+      end
+
+      value_view = @style.render(visible)
     end
 
     prompt_view + value_view

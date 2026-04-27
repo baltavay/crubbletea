@@ -33,8 +33,8 @@ module Crubbletea::Termios
     raw.c_oflag = raw.c_oflag & ~LibC::OPOST
     raw.c_cflag = (raw.c_cflag & ~LibC::CS8) | LibC::CS8
     raw.c_lflag = raw.c_lflag & ~(LibC::ECHO | LibC::ICANON | LibC::ISIG | LibC::IEXTEN)
-    raw.c_cc[LibC::VMIN] = 0_u8
-    raw.c_cc[VTIME] = 1_u8
+    raw.c_cc[LibC::VMIN] = 1_u8
+    raw.c_cc[VTIME] = 0_u8
 
     set_state(fd, raw)
     old

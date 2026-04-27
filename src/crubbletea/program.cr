@@ -13,6 +13,7 @@ class Crubbletea::Program(M)
   @stdin_fd : Int32
   @stdout_fd : Int32
   @filter : (Msg -> Msg)?
+  @escape_timer_active : Bool = false
 
   def initialize(
     @model : M,
@@ -98,6 +99,26 @@ class Crubbletea::Program(M)
         next
       end
 
+      if raw.is_a?(EscapePendingMsg)
+        unless @escape_timer_active
+          @escape_timer_active = true
+          spawn do
+            sleep 50.milliseconds
+            @msgs.send(FlushEscapeMsg.new.as(Msg))
+          end
+        end
+        next
+      end
+
+      if raw.is_a?(FlushEscapeMsg)
+        @escape_timer_active = false
+        if @input_parser.in_escape_state?
+          esc_msg = @input_parser.flush_escape
+          @msgs.send(esc_msg) if esc_msg
+        end
+        next
+      end
+
       if raw.is_a?(ClearScreenMsg)
         @renderer.try(&.clear_screen)
       end
@@ -136,35 +157,16 @@ class Crubbletea::Program(M)
       break unless @running
       begin
         n = STDIN.read(buf)
-        break if n < 0
-        if n == 0
-          if @input_parser.in_escape_state?
-            msg = @input_parser.flush_escape
-            @msgs.send(msg) if msg
-          end
-          next
-        end
+        break if n <= 0
         i = 0
         while i < n
           msg = @input_parser.parse(buf[i])
           if msg
             @msgs.send(msg)
+          elsif @input_parser.in_escape_state?
+            @msgs.send(EscapePendingMsg.new.as(Msg))
           end
           i += 1
-        end
-        if @input_parser.in_escape_state?
-          n2 = STDIN.read(buf)
-          if n2 > 0
-            j = 0
-            while j < n2
-              msg = @input_parser.parse(buf[j])
-              @msgs.send(msg) if msg
-              j += 1
-            end
-          else
-            msg = @input_parser.flush_escape
-            @msgs.send(msg) if msg
-          end
         end
       rescue ex
         @errs.send(ex)

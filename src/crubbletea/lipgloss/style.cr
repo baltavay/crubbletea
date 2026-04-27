@@ -423,29 +423,32 @@ struct Crubbletea::Lipgloss::Style
     mb = get_margin_bottom
     ml = get_margin_left
 
+    border_w = (@border && @border_left ? 1 : 0) + (@border && @border_right ? 1 : 0)
+    border_h = (@border && @border_top ? 1 : 0) + (@border && @border_bottom ? 1 : 0)
+
     target_w = content_w
     if w = @width
-      target_w = {w - pl - pr, 0}.max
+      target_w = {w - pl - pr - border_w, 0}.max
     end
     if mw = @max_width
-      tw = mw - pl - pr
+      tw = mw - pl - pr - border_w
       target_w = {target_w, tw}.min if tw < target_w
     end
     if minw = @min_width
-      tw = minw - pl - pr
+      tw = minw - pl - pr - border_w
       target_w = {target_w, tw}.max if tw > target_w
     end
 
     target_h = content_h
     if h = @height
-      target_h = {h - pt - pb, 0}.max
+      target_h = {h - pt - pb - border_h, 0}.max
     end
     if mh = @max_height
-      th = mh - pt - pb
+      th = mh - pt - pb - border_h
       target_h = {target_h, th}.min if th < target_h
     end
     if minh = @min_height
-      th = minh - pt - pb
+      th = minh - pt - pb - border_h
       target_h = {target_h, th}.max if th > target_h
     end
 
@@ -496,6 +499,10 @@ struct Crubbletea::Lipgloss::Style
     border_style_prefix = (border_fg.empty? && border_bg.empty?) ? "" : border_fg + border_bg
     border_style_reset = border_style_prefix.empty? ? "" : "\e[0m"
 
+    styled = padded.map do |line|
+      apply_ansi(line)
+    end
+
     if b = @border
       border_lines = [] of String
       if @border_top
@@ -506,16 +513,13 @@ struct Crubbletea::Lipgloss::Style
         border_lines << top_line
       end
 
-      padded.each_with_index do |line, i|
+      styled.each_with_index do |line, _i|
         left = @border_left ? b.left : ""
         right = @border_right ? b.right : ""
         if border_style_prefix.empty?
           border_lines << left + line + right
         else
-          mid = line
-          mid = border_style_prefix + left + border_style_reset + mid
-          mid = mid + border_style_prefix + right + border_style_reset
-          border_lines << mid
+          border_lines << border_style_prefix + left + border_style_reset + line + border_style_prefix + right + border_style_reset
         end
       end
 
@@ -527,11 +531,7 @@ struct Crubbletea::Lipgloss::Style
         border_lines << bot_line
       end
 
-      padded = border_lines
-    end
-
-    styled = padded.map do |line|
-      apply_ansi(line)
+      styled = border_lines
     end
 
     if !@inline
@@ -600,7 +600,14 @@ struct Crubbletea::Lipgloss::Style
     if @inline
       code_str + s + reset
     else
-      s.split('\n').map { |line| code_str + line + reset }.join('\n')
+      s.split('\n').map do |line|
+        if line.includes?(reset)
+          styled_line = line.gsub(reset, reset + code_str)
+          code_str + styled_line + reset
+        else
+          code_str + line + reset
+        end
+      end.join('\n')
     end
   end
 end

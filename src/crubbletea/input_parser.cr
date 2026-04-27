@@ -96,6 +96,8 @@ struct Crubbletea::InputParser
       KeyPressMsg.new(Key.new(code: :backspace))
     when 0x09
       KeyPressMsg.new(Key.new(code: :tab))
+    when 0x20
+      KeyPressMsg.new(Key.new(code: :space, text: " "))
     when 0x01..0x1a
       KeyPressMsg.new(Key.new(text: (byte + 0x60).chr.to_s, ctrl: true))
     else
