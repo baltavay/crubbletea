@@ -222,4 +222,4 @@ MIT — see [LICENSE](LICENSE)
 
 ## Contributors
 
-- [Mansurov Maksatbek](https://github.com/mansurovmaksatbek) — creator and maintainer
+- [Mansurov Maksatbek](https://github.com/baltavay) — creator and maintainer
