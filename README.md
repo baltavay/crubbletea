@@ -1,7 +1,5 @@
 # crubbletea
 
-> **Work in progress.** Many features are incomplete or broken. Expect bugs, missing functionality, and API changes.
-
 A port of [Bubble Tea](https://github.com/charmbracelet/bubbletea) (Go) to [Crystal](https://crystal-lang.org/) — a framework for building TUIs
 
 This includes ports of the Bubble Tea companion libraries as well:
