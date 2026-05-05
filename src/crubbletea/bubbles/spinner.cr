@@ -77,6 +77,9 @@ class Crubbletea::Bubbles::Spinner::Model
   end
 
   private def tick_cmd(id : Int32, tag : Int32) : Crubbletea::Cmd
-    ->{ TickMsg.new(Time.utc, id, tag).as(Crubbletea::Msg) }
+    ->{
+      sleep @spinner.fps
+      TickMsg.new(Time.utc, id, tag).as(Crubbletea::Msg)
+    }
   end
 end

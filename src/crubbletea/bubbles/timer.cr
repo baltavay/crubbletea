@@ -81,7 +81,22 @@ class Crubbletea::Bubbles::Timer::Model
   end
 
   def view : String
-    @timeout.to_s
+    t = @timeout
+    if t.negative?
+      "0s"
+    elsif t.total_seconds < 1
+      "#{"%.9f" % t.total_seconds}s"
+    elsif t.total_minutes < 1
+      "%.2fs" % t.total_seconds
+    elsif t.total_hours < 1
+      "%dm%05.2fs" % [t.minutes, t.total_seconds - t.minutes * 60]
+    else
+      "%dh%dm%05.2fs" % [t.hours, t.minutes, t.total_seconds - t.minutes * 60 - t.hours * 3600]
+    end
+  end
+
+  def reset(timeout : Time::Span) : Nil
+    @timeout = timeout
   end
 
   def start : Crubbletea::Cmd
@@ -98,6 +113,12 @@ class Crubbletea::Bubbles::Timer::Model
 
   private def tick_cmd : Crubbletea::Cmd
     @tag += 1
-    ->{ TickMsg.new(@id, timedout?, @tag).as(Crubbletea::Msg) }
+    tag = @tag
+    id = @id
+    to = timedout?
+    ->{
+      sleep @interval
+      TickMsg.new(id, to, tag).as(Crubbletea::Msg)
+    }
   end
 end

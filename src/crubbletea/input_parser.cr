@@ -231,14 +231,29 @@ struct Crubbletea::InputParser
     x = {params[1] - 1, 0}.max
     y = {params[2] - 1, 0}.max
 
-    button = parse_mouse_button(btn_code)
     ctrl = (btn_code & 0x10) != 0
     alt = (btn_code & 0x08) != 0
     shift = (btn_code & 0x04) != 0
 
+    base = btn_code & 0x43
+    button = case base
+             when 0 then MouseButton::Left
+             when 1 then MouseButton::Middle
+             when 2 then MouseButton::Right
+             when 64 then MouseButton::WheelUp
+             when 65 then MouseButton::WheelDown
+             when 66 then MouseButton::WheelLeft
+             when 67 then MouseButton::WheelRight
+             else         MouseButton::None
+             end
+
+    motion = (btn_code & 0x20) != 0
+
     mouse = Mouse.new(x: x, y: y, button: button, ctrl: ctrl, alt: alt, shift: shift)
     if button.wheel_up? || button.wheel_down? || button.wheel_left? || button.wheel_right?
       MouseWheelMsg.new(mouse).as(Msg)
+    elsif motion
+      MouseMotionMsg.new(mouse).as(Msg)
     else
       MouseClickMsg.new(mouse).as(Msg)
     end
@@ -250,7 +265,13 @@ struct Crubbletea::InputParser
     x = {params[1] - 1, 0}.max
     y = {params[2] - 1, 0}.max
 
-    button = parse_mouse_button(btn_code)
+    base = btn_code & 0x03
+    button = case base
+             when 0 then MouseButton::Left
+             when 1 then MouseButton::Middle
+             when 2 then MouseButton::Right
+             else         MouseButton::None
+             end
     ctrl = (btn_code & 0x10) != 0
     alt = (btn_code & 0x08) != 0
     shift = (btn_code & 0x04) != 0
@@ -270,6 +291,7 @@ struct Crubbletea::InputParser
 
   private def parse_csi_params(s : String) : Array(Int32)
     return [] of Int32 if s.empty?
+    s = s.lchop('<')
     s.split(';').map { |p| p.to_i? || 0 }
   end
 end

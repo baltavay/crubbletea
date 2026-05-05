@@ -104,7 +104,7 @@ class Crubbletea::Bubbles::FilePicker::Model
     end
 
     visible = [] of String
-    start = {@index - @height / 2, 0}.max
+    start = {@index - @height // 2, 0}.max
     start = {start, {@files.size - @height, 0}.max}.min if @files.size > @height
 
     (@height).times do |i|

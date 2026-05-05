@@ -30,9 +30,21 @@ require "./crubbletea/bubbles/table"
 require "./crubbletea/bubbles/list"
 require "./crubbletea/bubbles/filepicker"
 require "./crubbletea/ntcharts"
+require "./crubbletea/compositor"
+require "./crubbletea/markdown"
 
 module Crubbletea
   VERSION = "0.1.0"
+
+  @@test_mode = false
+
+  def self.test_mode? : Bool
+    @@test_mode
+  end
+
+  def self.test_mode=(v : Bool) : Nil
+    @@test_mode = v
+  end
 
   def self.quit : Cmd
     -> { QuitMsg.new.as(Msg) }
@@ -48,5 +60,10 @@ module Crubbletea
 
   def self.new_view(content : String) : View
     View.new(content)
+  end
+
+  def self.printf(template : String, *args) : Cmd
+    body = template % args
+    -> { PrintLineMsg.new(body).as(Msg) }
   end
 end

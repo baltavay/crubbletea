@@ -42,6 +42,19 @@ class Crubbletea::Bubbles::Viewport::Model
     rebuild_lines
   end
 
+  def width=(w : Int32) : Nil
+    @width = w
+    rebuild_lines if @soft_wrap
+  end
+
+  def height=(h : Int32) : Nil
+    @height = h
+  end
+
+  def goto_bottom : Nil
+    @y_offset = max_y_offset
+  end
+
   def total_lines : Int32
     @total_lines
   end

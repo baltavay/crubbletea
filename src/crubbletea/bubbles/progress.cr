@@ -61,6 +61,10 @@ class Crubbletea::Bubbles::Progress::Model
     @spring = Harmonica::Spring.new(Harmonica.fps(FPS), frequency, damping)
   end
 
+  def width=(w : Int32) : Nil
+    @width = w
+  end
+
   def percent : Float64
     @target_percent
   end
@@ -111,7 +115,10 @@ class Crubbletea::Bubbles::Progress::Model
   end
 
   private def next_frame_cmd : Crubbletea::Cmd
-    ->{ FrameMsg.new(@id, @tag).as(Crubbletea::Msg) }
+    ->{
+      sleep (1000 / FPS).milliseconds
+      FrameMsg.new(@id, @tag).as(Crubbletea::Msg)
+    }
   end
 
   private def bar_view(percent : Float64, text_width : Int32) : String

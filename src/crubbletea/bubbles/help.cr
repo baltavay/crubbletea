@@ -140,4 +140,6 @@ module Crubbletea::Bubbles::Help
       Lipgloss.join_horizontal(Lipgloss::Style::Pos::Top, cols)
     end
   end
+
+  alias Model = HelpModel
 end

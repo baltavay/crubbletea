@@ -472,8 +472,22 @@ struct Crubbletea::Lipgloss::Style
       end
     end
 
-    while aligned.size < target_h
-      aligned << " " * target_w
+    if @vertical_align
+      content_h = aligned.size
+      if content_h < target_h
+        case @vertical_align
+        when Pos::Bottom
+          aligned = Array.new(target_h - content_h) { " " * target_w } + aligned
+        when Pos::Center
+          pad_top = (target_h - content_h) // 2
+          pad_bottom = target_h - content_h - pad_top
+          aligned = Array.new(pad_top) { " " * target_w } + aligned + Array.new(pad_bottom) { " " * target_w }
+        end
+      end
+    else
+      while aligned.size < target_h
+        aligned << " " * target_w
+      end
     end
     if aligned.size > target_h
       aligned = aligned[0...target_h]
@@ -506,16 +520,17 @@ struct Crubbletea::Lipgloss::Style
     if b = @border
       border_lines = [] of String
       if @border_top
-        tl = @border_top && @border_left ? b.top_left : (@border_top ? b.top : "")
-        tr = @border_top && @border_right ? b.top_right : (@border_top ? b.top : "")
-        top_line = tl + b.top * inner_w + tr
+        tl = @border_top && @border_left ? (b.top_left.empty? ? " " : b.top_left) : (@border_top ? (b.top.empty? ? " " : b.top) : "")
+        tr = @border_top && @border_right ? (b.top_right.empty? ? " " : b.top_right) : (@border_top ? (b.top.empty? ? " " : b.top) : "")
+        top_mid = b.top.empty? ? " " : b.top
+        top_line = tl + top_mid * inner_w + tr
         top_line = border_style_prefix + top_line + border_style_reset unless border_style_prefix.empty?
         border_lines << top_line
       end
 
       styled.each_with_index do |line, _i|
-        left = @border_left ? b.left : ""
-        right = @border_right ? b.right : ""
+        left = @border_left ? (b.left.empty? ? " " : b.left) : ""
+        right = @border_right ? (b.right.empty? ? " " : b.right) : ""
         if border_style_prefix.empty?
           border_lines << left + line + right
         else
@@ -524,9 +539,10 @@ struct Crubbletea::Lipgloss::Style
       end
 
       if @border_bottom
-        bl = @border_bottom && @border_left ? b.bottom_left : (@border_bottom ? b.bottom : "")
-        br = @border_bottom && @border_right ? b.bottom_right : (@border_bottom ? b.bottom : "")
-        bot_line = bl + b.bottom * inner_w + br
+        bl = @border_bottom && @border_left ? (b.bottom_left.empty? ? " " : b.bottom_left) : (@border_bottom ? (b.bottom.empty? ? " " : b.bottom) : "")
+        br = @border_bottom && @border_right ? (b.bottom_right.empty? ? " " : b.bottom_right) : (@border_bottom ? (b.bottom.empty? ? " " : b.bottom) : "")
+        bot_mid = b.bottom.empty? ? " " : b.bottom
+        bot_line = bl + bot_mid * inner_w + br
         bot_line = border_style_prefix + bot_line + border_style_reset unless border_style_prefix.empty?
         border_lines << bot_line
       end

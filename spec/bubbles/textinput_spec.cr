@@ -279,6 +279,32 @@ describe Crubbletea::Bubbles::TextInput do
         ti.focus
         ti.view.should contain("enter text...")
       end
+
+      it "scrolls when text exceeds width" do
+        ti = Crubbletea::Bubbles::TextInput::Model.new(prompt: "> ", width: 10)
+        ti.focus
+        20.times { ti, _ = ti.update(key_press("x")) }
+        ti.cursor_pos.should eq(20)
+        view = ti.view
+        view.should start_with("> ")
+        Crubbletea::Lipgloss::ANSI.string_width(view).should be <= 10
+      end
+
+      it "visible_cursor_pos accounts for scroll offset" do
+        ti = Crubbletea::Bubbles::TextInput::Model.new(prompt: "> ", width: 10)
+        ti.focus
+        20.times { ti, _ = ti.update(key_press("x")) }
+        ti.visible_cursor_pos.should be < ti.cursor_pos
+        ti.visible_cursor_pos.should be >= 0
+      end
+
+      it "visible_cursor_pos returns prompt width + cursor offset when no scroll" do
+        ti = Crubbletea::Bubbles::TextInput::Model.new(prompt: "> ", width: 20)
+        ti.focus
+        5.times { ti, _ = ti.update(key_press("x")) }
+        prompt_w = Crubbletea::Lipgloss::ANSI.string_width(ti.prompt)
+        ti.visible_cursor_pos.should eq(prompt_w + 5)
+      end
     end
   end
 end

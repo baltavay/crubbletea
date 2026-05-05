@@ -31,17 +31,23 @@ module Crubbletea::Lipgloss
       h = str_heights[idx]
       lines = s.split('\n')
       s_w = lines.map { |l| ANSI.string_width(l) }.max
-      while lines.size < max_h
-        case position
-        when Style::Pos::Top, Style::Pos::Left
+      case position
+      when Style::Pos::Top, Style::Pos::Left
+        while lines.size < max_h
           lines << " " * s_w
-        when Style::Pos::Bottom, Style::Pos::Right
-          lines.insert(0, " " * s_w)
-        when Style::Pos::Center
+        end
+      when Style::Pos::Bottom, Style::Pos::Right
+        while lines.size < max_h
           lines.insert(0, " " * s_w)
         end
+      when Style::Pos::Center
+        top_pad = (max_h - lines.size) // 2
+        top_pad.times { lines.insert(0, " " * s_w) }
+        while lines.size < max_h
+          lines << " " * s_w
+        end
       end
-      lines
+      lines.map { |l| l + " " * (s_w - ANSI.string_width(l)) }
     end
 
     result = Array(String).new(max_h, "")

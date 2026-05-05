@@ -27,4 +27,8 @@ struct Crubbletea::Cursor
   def self.new(x : Int32, y : Int32) : Cursor
     new(Position.new(x, y))
   end
+
+  def self.new(x : Int32, y : Int32, shape : CursorShape, blink : Bool) : Cursor
+    new(Position.new(x, y), shape, blink)
+  end
 end

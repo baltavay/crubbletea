@@ -49,7 +49,7 @@ module Crubbletea::Lipgloss::ANSI
       (0x2B1B <= cp <= 0x2B1C) ||
       (0x2B50 <= cp <= 0x2B50) ||
       (0x2B55 <= cp <= 0x2B55) ||
-      (0x2FF0 <= cp <= 0x4DBF) ||
+      (0x2FF0 <= cp <= 0x4DBF && !(0x2800 <= cp <= 0x28FF)) ||
       (0x4E00 <= cp <= 0x9FFF) ||
       (0xA000 <= cp <= 0xA4CF) ||
       (0xAC00 <= cp <= 0xD7A3) ||
@@ -68,6 +68,7 @@ module Crubbletea::Lipgloss::ANSI
   end
 
   def self.string_width(s : String) : Int32
+    max_w = 0
     n = 0
     in_esc = false
     s.each_char do |c|
@@ -75,11 +76,14 @@ module Crubbletea::Lipgloss::ANSI
         in_esc = true
       elsif in_esc
         in_esc = false if terminator?(c)
+      elsif c == '\n'
+        max_w = n if n > max_w
+        n = 0
       else
         n += char_width(c)
       end
     end
-    n
+    n > max_w ? n : max_w
   end
 
   def self.truncate(s : String, max_width : Int32, tail : String = "") : String

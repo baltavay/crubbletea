@@ -227,10 +227,14 @@ class Crubbletea::Lipgloss::TableRenderer
     @widths = Array.new(num_cols, 0)
     @heights = Array.new(all_rows.size, 1)
 
-    all_rows.each_with_index do |row, _ri|
+    all_rows.each_with_index do |row, ri|
       row.each_with_index do |cell, ci|
+        next if ci >= num_cols
         cw = Lipgloss.width(cell)
-        @widths[ci] = {@widths[ci], cw}.max if ci < num_cols
+        row_idx = ri == 0 && !@headers.empty? ? HEADER_ROW : (ri - (@headers.empty? ? 0 : 1))
+        s = style(row_idx, ci)
+        hpad = s.get_horizontal_padding
+        @widths[ci] = {@widths[ci], cw + hpad}.max
       end
     end
 

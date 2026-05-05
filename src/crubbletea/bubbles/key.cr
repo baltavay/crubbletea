@@ -14,6 +14,13 @@ struct Crubbletea::Bubbles::Key::Binding
   def enabled=(v : Bool)
     @disabled = !v
   end
+
+  def enabled_help : {String, String}?
+    return nil unless enabled?
+    k = @help_key.empty? ? @keys.first? || "" : @help_key
+    d = @help_desc.empty? ? "" : @help_desc
+    {k, d}
+  end
 end
 
 struct Crubbletea::Bubbles::Key::Help

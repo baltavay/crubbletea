@@ -41,6 +41,45 @@ module Crubbletea
   end
 
   def self.request_window_size : Cmd
-    ->{ WindowSizeMsg.new(0, 0).as(Msg) }
+    ->{
+      w, h = Termios.window_size(1)
+      WindowSizeMsg.new(w, h).as(Msg)
+    }
+  end
+
+  def self.request_background_color : Cmd
+    ->{
+      STDOUT << "\e]11;?\e\\"
+      STDOUT.flush
+      nil.as(Msg?)
+    }
+  end
+
+  def self.request_capability(names : Array(String)) : Cmd
+    ->{
+      STDOUT << ANSI.request_capability(names)
+      STDOUT.flush
+      CapabilityMsg.new("", "").as(Msg)
+    }
+  end
+
+  def self.exec_process(cmd : String, args : Array(String) = [] of String) : Cmd
+    ->{
+      begin
+        Process.run(cmd, args, input: STDIN, output: STDOUT, error: STDERR)
+        ExecFinishedMsg.new.as(Msg)
+      rescue e
+        ExecFinishedMsg.new(e).as(Msg)
+      end
+    }
+  end
+
+  def self.printf(format : String, *args) : Cmd
+    text = sprintf(format, *args)
+    ->{ PrintLineMsg.new(text).as(Msg) }
+  end
+
+  def self.new_compositor(width : Int32, height : Int32) : Compositor
+    Compositor.new(width, height)
   end
 end

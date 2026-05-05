@@ -25,6 +25,16 @@ module Crubbletea::ANSI
     "\e[#{y + 1};#{x + 1}H"
   end
 
+  def self.cursor_up(n : Int32) : String
+    return "" if n <= 0
+    "\e[#{n}A"
+  end
+
+  def self.cursor_down(n : Int32) : String
+    return "" if n <= 0
+    "\e[#{n}B"
+  end
+
   def self.clear_screen : String
     "\e[2J"
   end
@@ -123,5 +133,45 @@ module Crubbletea::ANSI
 
   def self.erase_line_right : String
     "\e[K"
+  end
+
+  def self.set_foreground_color(color : String) : String
+    "\e]10;#{color}\e\\"
+  end
+
+  def self.set_background_color(color : String) : String
+    "\e]11;#{color}\e\\"
+  end
+
+  def self.set_cursor_color(color : String) : String
+    "\e]12;#{color}\e\\"
+  end
+
+  def self.set_progress_bar(state : Int32, value : Int32) : String
+    "\e]9;4;#{state};#{value}\e\\"
+  end
+
+  def self.request_capability(names : Array(String)) : String
+    "\eP+q#{names.map(&.hex_bytes.join).join(';')}\e\\"
+  end
+
+  def self.query_background_color : String
+    "\e]11;?\e\\"
+  end
+
+  def self.enable_kitty_keyboard : String
+    "\e[?1u"
+  end
+
+  def self.disable_kitty_keyboard : String
+    "\e[?0u"
+  end
+
+  def self.begin_synced_update : String
+    "\e[?2026h"
+  end
+
+  def self.end_synced_update : String
+    "\e[?2026l"
   end
 end

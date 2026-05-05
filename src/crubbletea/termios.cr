@@ -47,7 +47,7 @@ module Crubbletea::Termios
   def self.window_size(fd : Int32) : {Int32, Int32}
     ws = uninitialized CrubbleteaIoctl::Winsize
     ret = CrubbleteaIoctl.ioctl(fd, TIOCGWINSZ, pointerof(ws))
-    if ret != 0
+    if ret != 0 || ws.ws_col == 0 || ws.ws_row == 0
       return {80, 24}
     end
     {ws.ws_col.to_i, ws.ws_row.to_i}

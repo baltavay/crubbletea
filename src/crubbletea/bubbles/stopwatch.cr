@@ -56,7 +56,10 @@ class Crubbletea::Bubbles::Stopwatch::Model
   end
 
   def start : Crubbletea::Cmd
-    ->{ StartStopMsg.new(@id, true).as(Crubbletea::Msg) }
+    Crubbletea.sequence([
+      ->{ StartStopMsg.new(@id, true).as(Crubbletea::Msg) },
+      tick_cmd,
+    ])
   end
 
   def stop : Crubbletea::Cmd
@@ -76,7 +79,7 @@ class Crubbletea::Bubbles::Stopwatch::Model
     when StartStopMsg
       return {self, nil} if msg.id != @id
       @running = msg.running
-      {self, @running ? tick_cmd : nil}
+      {self, nil}
     when ResetMsg
       return {self, nil} if msg.id != @id
       @duration = Time::Span.zero
@@ -98,10 +101,25 @@ class Crubbletea::Bubbles::Stopwatch::Model
   end
 
   def view : String
-    @duration.to_s
+    t = @duration
+    if t.total_hours >= 1
+      "#{t.hours}h#{t.minutes}m#{t.seconds}.#{t.milliseconds.to_s.rjust(3, '0')}s"
+    elsif t.total_minutes >= 1
+      "#{t.minutes}m#{t.seconds}.#{t.milliseconds.to_s.rjust(3, '0')}s"
+    elsif t.total_seconds >= 1
+      "#{t.seconds}.#{t.milliseconds.to_s.rjust(3, '0')}s"
+    else
+      "#{"%.3f" % t.total_seconds}s"
+    end
   end
 
   private def tick_cmd : Crubbletea::Cmd
-    ->{ TickMsg.new(@id, @tag).as(Crubbletea::Msg) }
+    tag = @tag
+    id = @id
+    interval = @interval
+    ->{
+      sleep interval
+      TickMsg.new(id, tag).as(Crubbletea::Msg)
+    }
   end
 end

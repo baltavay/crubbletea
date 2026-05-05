@@ -42,6 +42,11 @@ describe Crubbletea::Lipgloss::Style do
       style.render("hello").should eq("\e[7mhello\e[0m")
     end
 
+    it "renders foreground with hex color" do
+      style = Crubbletea::Lipgloss::Style.new.foreground("#5A56E0")
+      style.render("hello").should eq("\e[38;2;90;86;224mhello\e[0m")
+    end
+
     it "returns empty for empty input without dimensions" do
       style = Crubbletea::Lipgloss::Style.new
       style.render("").should eq("")
@@ -58,6 +63,28 @@ describe Crubbletea::Lipgloss::Style do
       result = style.render("hello\nworld")
       result.should contain("\e[1m")
     end
+
+    it "renders with margin right" do
+      style = Crubbletea::Lipgloss::Style.new.margin(0, 1, 0, 0)
+      style.render("foo").should eq("foo ")
+    end
+
+    it "renders with margin left" do
+      style = Crubbletea::Lipgloss::Style.new.margin(0, 0, 0, 1)
+      style.render("foo").should eq(" foo")
+    end
+
+    it "renders empty text with margin right" do
+      style = Crubbletea::Lipgloss::Style.new.margin(0, 1, 0, 0)
+      result = style.render("")
+      result.should eq("")
+    end
+
+    it "renders empty text with margin left" do
+      style = Crubbletea::Lipgloss::Style.new.margin(0, 0, 0, 1)
+      result = style.render("")
+      result.should eq("")
+    end
   end
 
   describe "chaining" do
@@ -72,6 +99,15 @@ describe Crubbletea::Lipgloss::Style do
       s1 = Crubbletea::Lipgloss::Style.new
       s2 = s1.bold(true)
       s1.should_not eq(s2)
+    end
+  end
+
+  describe "value copy" do
+    it "does not mutate original when modifying copy" do
+      s = Crubbletea::Lipgloss::Style.new.bold(true)
+      i = s.bold(false)
+      s.render("x").should contain("\e[1m")
+      i.render("x").should_not contain("\e[1m")
     end
   end
 
@@ -100,6 +136,12 @@ describe Crubbletea::Lipgloss::Style do
       style.get_padding_left.should eq(4)
       style.get_horizontal_padding.should eq(6)
       style.get_vertical_padding.should eq(4)
+    end
+
+    it "custom padding char" do
+      style = Crubbletea::Lipgloss::Style.new.padding(0, 3)
+      result = style.render("TEST")
+      result.should eq("   TEST   ")
     end
   end
 
@@ -144,6 +186,46 @@ describe Crubbletea::Lipgloss::Style do
       style = Crubbletea::Lipgloss::Style.new.width(42)
       style.get_width.should eq(42)
     end
+
+    it "width with borders is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+      content_width = 80 - style.get_horizontal_frame_size
+      rendered = style.width(content_width).render("x" * 100)
+      Crubbletea::Lipgloss.width(rendered).should eq(content_width)
+    end
+
+    it "width without borders is consistent" do
+      style = Crubbletea::Lipgloss::Style.new.padding(0, 2)
+      content_width = 80 - style.get_horizontal_frame_size
+      rendered = style.width(content_width).render("x" * 100)
+      Crubbletea::Lipgloss.width(rendered).should eq(content_width)
+    end
+
+    it "width with unset border sides is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+        .border_left(false)
+        .border_right(false)
+      content_width = 80 - style.get_horizontal_frame_size
+      rendered = style.width(content_width).render("x" * 100)
+      rendered_w = Crubbletea::Lipgloss.width(rendered)
+      rendered_w.should be > 0
+    end
+
+    it "width with single-sided border is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+        .border_top(false)
+        .border_bottom(false)
+        .border_right(false)
+      content_width = 80 - style.get_horizontal_frame_size
+      rendered = style.width(content_width).render("x" * 100)
+      Crubbletea::Lipgloss.width(rendered).should eq(content_width)
+    end
   end
 
   describe "height" do
@@ -156,6 +238,50 @@ describe Crubbletea::Lipgloss::Style do
     it "getter returns height" do
       style = Crubbletea::Lipgloss::Style.new.height(10)
       style.get_height.should eq(10)
+    end
+
+    it "height with borders is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .width(80)
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+      content_height = 20 - style.get_vertical_frame_size
+      rendered = style.height(content_height).render("x" * 200)
+      Crubbletea::Lipgloss.height(rendered).should eq(content_height)
+    end
+
+    it "height without borders is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .width(80)
+        .padding(0, 2)
+      content_height = 20 - style.get_vertical_frame_size
+      rendered = style.height(content_height).render("x" * 200)
+      Crubbletea::Lipgloss.height(rendered).should eq(content_height)
+    end
+
+    it "height with unset border sides is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .width(80)
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+        .border_top(false)
+        .border_bottom(false)
+      content_height = 20 - style.get_vertical_frame_size
+      rendered = style.height(content_height).render("x" * 200)
+      Crubbletea::Lipgloss.height(rendered).should eq(content_height)
+    end
+
+    it "height with single-sided border is consistent" do
+      style = Crubbletea::Lipgloss::Style.new
+        .width(80)
+        .padding(0, 2)
+        .border(Crubbletea::Lipgloss::Border.normal)
+        .border_left(false)
+        .border_bottom(false)
+        .border_right(false)
+      content_height = 20 - style.get_vertical_frame_size
+      rendered = style.height(content_height).render("x" * 200)
+      Crubbletea::Lipgloss.height(rendered).should eq(content_height)
     end
   end
 
@@ -172,6 +298,13 @@ describe Crubbletea::Lipgloss::Style do
       result = style.render("hi")
       Crubbletea::Lipgloss::ANSI.string_width(result).should eq(10)
     end
+
+    it "aligns left (default)" do
+      style = Crubbletea::Lipgloss::Style.new.width(10)
+      result = style.render("hi")
+      Crubbletea::Lipgloss::ANSI.string_width(result).should eq(10)
+      result.should start_with("hi")
+    end
   end
 
   describe "inherit" do
@@ -187,6 +320,24 @@ describe Crubbletea::Lipgloss::Style do
       result = child.render("hi")
       result.should_not contain("\e[1m")
       result.should contain("\e[3m")
+    end
+
+    it "inherits foreground color" do
+      parent = Crubbletea::Lipgloss::Style.new.foreground("#FF0000")
+      child = Crubbletea::Lipgloss::Style.new.inherit(parent)
+      child.get_foreground.should eq("#FF0000")
+    end
+
+    it "does not inherit margins" do
+      parent = Crubbletea::Lipgloss::Style.new.margin(1, 2, 3, 4)
+      child = Crubbletea::Lipgloss::Style.new.inherit(parent)
+      child.get_margin_top.should_not eq(1)
+    end
+
+    it "does not inherit padding" do
+      parent = Crubbletea::Lipgloss::Style.new.padding(1, 2, 3, 4)
+      child = Crubbletea::Lipgloss::Style.new.inherit(parent)
+      child.get_padding_top.should_not eq(1)
     end
   end
 
@@ -212,6 +363,28 @@ describe Crubbletea::Lipgloss::Style do
       result.should contain("┘")
     end
 
+    it "renders hidden border with no visible chars" do
+      border = Crubbletea::Lipgloss::Border.hidden
+      style = Crubbletea::Lipgloss::Style.new.border(border)
+      result = style.render("hi")
+      result.should_not contain("┌")
+      result.should_not contain("│")
+      result.should contain("hi")
+    end
+
+    it "hidden border takes same space as normal border" do
+      normal_style = Crubbletea::Lipgloss::Style.new
+        .width(15).height(5)
+        .border(Crubbletea::Lipgloss::Border.normal)
+      hidden_style = Crubbletea::Lipgloss::Style.new
+        .width(15).height(5)
+        .border(Crubbletea::Lipgloss::Border.hidden)
+
+      normal_lines = normal_style.render("x").split('\n')
+      hidden_lines = hidden_style.render("x").split('\n')
+      normal_lines.size.should eq(hidden_lines.size)
+    end
+
     it "reports border sides" do
       border = Crubbletea::Lipgloss::Border.normal
       style = Crubbletea::Lipgloss::Style.new.border(border)
@@ -233,6 +406,14 @@ describe Crubbletea::Lipgloss::Style do
       style = Crubbletea::Lipgloss::Style.new.border(border).padding(1, 2)
       style.get_horizontal_frame_size.should eq(6)
       style.get_vertical_frame_size.should eq(4)
+    end
+
+    it "renders border foreground color" do
+      style = Crubbletea::Lipgloss::Style.new
+        .border(Crubbletea::Lipgloss::Border.normal)
+        .border_foreground("#5F87FF")
+      result = style.render("hi")
+      result.should contain("\e[38;2;95;135;255m")
     end
   end
 
