@@ -7,6 +7,7 @@ class Crubbletea::Renderer
   @cursor_hidden : Bool = false
   @inline_height : Int32 = 0
   @cursor_row : Int32 = 0
+  @kitty_keyboard_active : Bool = false
 
   def initialize(@output : IO, @width : Int32 = 80, @height : Int32 = 24)
   end
@@ -105,6 +106,7 @@ class Crubbletea::Renderer
     if ke = view.keyboard_enhancements
       if current_view.nil?
         buf << ANSI.enable_kitty_keyboard
+        @kitty_keyboard_active = true
       end
     end
 
@@ -255,7 +257,7 @@ class Crubbletea::Renderer
     end
     @output << ANSI.reset_cursor_style
     @output << ANSI.show_cursor
-    @output << ANSI.disable_kitty_keyboard
+    @output << ANSI.disable_kitty_keyboard if @kitty_keyboard_active
     @output.flush
     @cursor_hidden = false
   end
